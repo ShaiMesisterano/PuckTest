@@ -3,7 +3,36 @@
  </head>
  <body>
   <script src="https://www.puck-js.com/puck.js"></script>
-  <button onclick="Puck.write('LED1.set();\n');">LED On!</button>
-  <button onclick="Puck.write('LED1.reset();\n');">LED Off!</button>
+  <script>
+       // run the webcam image through the image model
+    async function predict() {
+        // predict can take in an image, video or canvas html element
+        const prediction = await model.predict(webcam.canvas);
+        for (let i = 0; i < maxPredictions; i++) {
+            const classPrediction =
+                prediction[i].className + ": " + prediction[i].probability.toFixed(2);
+            labelContainer.childNodes[i].innerHTML = classPrediction;
+        }
+        // Check if it's likely the nose was picked for a while
+        if (prediction[1].probability > 0.5) {
+          pickCounter++;
+          // If so, send some JS to Bangle.js to make it buzz
+          if (pickCounter==20 && connected)
+            Puck.write("Bangle.buzz()\n");
+        } else {
+          pickCounter = 0;
+        }
+    }
+    // Web Bluetooth connections can only be started in response
+    // to a user's action, so this boilerplate just puts something
+    // over the whole screen that must be clicked first
+    let connected = false;
+    let pickCounter = 0;
+    Puck.modal(function() {
+      Puck.write("\n", function() { // force a connection
+        connected = true;
+      });
+    });
+  </script>
  </body>
 </html>
